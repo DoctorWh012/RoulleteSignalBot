@@ -43,9 +43,12 @@ messagesSent = []
 
 class Bot:
     def __init__(self):
+        # Notifier
+        self.SendMessageTelegram("🚀𝐢𝐧𝐢𝐜𝐢𝐚𝐧𝐝𝐨 𝐛𝐨𝐭🚀")
         # Input handler
         while True:
             try:
+                print('-'*60)
                 print('Bot made by D0C_ [github.com/DoctorWh012]')
                 self.colorCap = int(input('Sequencia de cor para avisar = '))
                 self.hiLoCap = int(

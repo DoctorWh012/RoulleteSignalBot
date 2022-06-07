@@ -15,6 +15,7 @@ Yes the code is messy and there is much to do better, i just got back into pytho
 i just want to ship something that works OK.
 
 TODO
+Optimizing
 Increase the maximum ammount of numbers that can be tracked
 Send signals on dedicated groups
 Add support to betano
@@ -52,14 +53,18 @@ class Bot:
             try:
                 print('-'*60)
                 print('Bot made by D0C_ [github.com/DoctorWh012]')
+
                 self.colorCap = int(input('Sequencia de cor para avisar = '))
                 self.hiLoCap = int(
                     input('Sequencia de numeros baixos e altos = '))
                 self.evenOrOddCap = int(input("Sequencia de impar ou par = "))
                 self.dozenCap = int(input('Sequencia de dezenas = '))
                 self.RowCap = int(input('Sequencia de colunas = '))
+
             except:
+                print('-'*60)
                 print("Input invalido Tente denovo")
+
             else:
                 os.system('cls')
                 break
@@ -79,6 +84,7 @@ class Bot:
                     By.XPATH, '//*[@id="root"]/div/div[2]/div[2]/div/div/div/div[1]/div/nav/a[3]').click()
                 sleep(1)
                 driver.execute_script("window.scrollTo(0, 700)")
+
             except:
                 print("Erro ao Abrir o bot")
             else:
@@ -112,6 +118,17 @@ class Bot:
         # Clears the sequenceMessages list for new messages dont ask me how this works
         sequenceMessages.clear()
 
+        # Debug shit
+        os.system('cls')
+        print(f'{"-"*10} All tables {"-"*10}')
+        for table in allTables:
+            print(table)
+        
+        print(f'{"-"*10} Tables on Alert {"-"*10}')
+        for table in tablesOnAlert:
+            print(table)
+
+        # gets the results from a table and saves it on a list
         for table in allTables:
             numberList = []
             colorList = []
@@ -120,26 +137,27 @@ class Bot:
                 numberList.append(int(results[0]))
                 colorList.append(results[1])
 
-            # Can do right here
+            # Green/Red verifier
             if table in tablesOnAlert:
-                os.system('cls')
-                for tables in tablesOnAlert:
-                    print(f'{tables}={tablesOnAlert[tables]}')
-
                 if numberList != tablesOnAlert[table][0][:8]:
-                    print(f'adicionando numero em {table}')
+
+                    print(
+                        f'\nadicionando numero {numberList[0]} em {table}\npq {numberList} != {tablesOnAlert[table][0][:8]} ')
+
                     tablesOnAlert[table][0].insert(0, numberList[0])
                     tablesOnAlert[table][1].insert(0, colorList[0])
 
+                    print(f'Ficou {table} == {tablesOnAlert[table]}')
+
                     self.CheckForResults(
                         tablesOnAlert[table][0], table, tablesOnAlert[table][1], tablesOnAlert[table][2])
+
                 try:
                     if len(tablesOnAlert[table][0]) >= 11:
-                        print(f'{len(tablesOnAlert[table][0])}')
-                        self.SendMessageTelegram(f'''❌Red❌
-por[{tablesOnAlert[table][2]}]
-{table}
-{tablesOnAlert[table][0][:len(tablesOnAlert[table][0])- 8]}''')
+                        # print(
+                        #     f'{table} reached len {len(tablesOnAlert[table][0])}')
+
+                        self.SendRedMessage(table)
                         tablesOnAlert.pop(table)
                 except:
                     pass
@@ -178,16 +196,10 @@ por[{tablesOnAlert[table][2]}]
         for x in range(0, self.colorCap):
             if colorList[x] != 'black':
                 break
-            # if x == self.colorCap - 2:
-                self.SaveMessageToList(f'''⏰ ATENTENÇAO⏰
-Sequencia de {x+1} numeros black
-Em 
-{table}''')
+            if x == self.colorCap - 2:
+                self.SendAttentionMessage(table, x, 'numeros black')
         else:
-            self.SaveMessageToList(f'''⚠️ ATENTENÇAO⚠️
-Apostar em numberos black
-Em
-{table}''')
+            self.SendBetMessage(table, 'black')
             self.SavaTableOnAlert(table, numList, colorList, 'black')
             return
 
@@ -195,17 +207,11 @@ Em
         for x in range(0, self.colorCap):
             if colorList[x] != 'red':
                 break
-            # if x == self.colorCap - 2:
-                self.SaveMessageToList(f'''⏰ ATENTENÇAO⏰
-Sequencia de {x+1} numeros red
-Em 
-{table}''')
+            if x == self.colorCap - 2:
+                self.SendAttentionMessage(table, x, 'numeros red')
         else:
-            self.SaveMessageToList(f'''⚠️ ATENTENÇAO⚠️
-Apostar em numeros red
-em
-{table}''')
             self.SavaTableOnAlert(table, numList, colorList, 'red')
+            self.SendBetMessage(table, 'red')
             return
 
     def CheckForHiLo(self, numList, colorList, table):
@@ -213,34 +219,22 @@ em
         for x in range(0, self.hiLoCap):
             if numList[x] > 18:
                 break
-            # if x == self.hiLoCap - 2:
-                self.SaveMessageToList(f'''⏰ ATENTENÇAO⏰
-Sequencia de {x+1} numeros baixos
-Em 
-{table}''')
+            if x == self.hiLoCap - 2:
+                self.SendAttentionMessage(table, x, 'numeros baixos')
         else:
             self.SavaTableOnAlert(table, numList, colorList, 'lo')
-            self.SaveMessageToList(f'''⚠️ ATENTENÇAO⚠️
-Apostar em numeros baixos
-em
-{table}''')
+            self.SendBetMessage(table, 'baixos')
             return
 
         # Checks for high numbers
         for x in range(0, self.hiLoCap):
             if numList[x] < 18:
                 break
-            # if x == self.hiLoCap - 2:
-                self.SaveMessageToList(f'''⏰ ATENTENÇAO⏰
-Sequencia de {x+1} numeros altos
-Em 
-{table}''')
+            if x == self.hiLoCap - 2:
+                self.SendAttentionMessage(table, x, 'numeros altos')
         else:
             self.SavaTableOnAlert(table, numList, colorList, 'hi')
-            self.SaveMessageToList(f'''⚠️ ATENTENÇAO⚠️                    
-Apostar em numeros altos
-em
-{table}''')
+            self.SendBetMessage(table, 'altos')
             return
 
     def CheckForEvenOrOdd(self, numList,  colorList, table):
@@ -248,34 +242,22 @@ em
         for x in range(0, self.evenOrOddCap):
             if numList[x] % 2 != 0:
                 break
-            # if x == self.hiLoCap - 2:
-                self.SaveMessageToList(f'''⏰ ATENTENÇAO⏰
-Sequencia de {x+1} numeros pares
-Em 
-{table}''')
+            if x == self.hiLoCap - 2:
+                self.SendAttentionMessage(table, x, 'numeros pares')
         else:
             self.SavaTableOnAlert(table, numList, colorList, 'even')
-            self.SaveMessageToList(f'''⚠️ ATENTENÇAO⚠️
-Apostar em numeros pares
-em
-{table}''')
+            self.SendBetMessage(table, 'pares')
             return
 
         # Checks for odd
         for x in range(0, self.evenOrOddCap):
             if numList[x] % 2 == 0:
                 break
-            # if x == self.evenOrOddCap - 2:
-                self.SaveMessageToList(f'''⏰ ATENTENÇAO⏰
-Sequencia de {x+1} numeros impares
-Em 
-{table}''')
+            if x == self.evenOrOddCap - 2:
+                self.SendAttentionMessage(table, x, 'numeros impares')
         else:
             self.SavaTableOnAlert(table, numList, colorList, 'odd')
-            self.SaveMessageToList(f'''⚠️ ATENTENÇAO⚠️
-Apostar em numeros impares
-em
-{table}''')
+            self.SendBetMessage(table, 'impares')
             return
 
     def CheckForDozen(self, numList, colorList, table):
@@ -283,125 +265,68 @@ em
         for x in range(0, self.dozenCap):
             if numList[x] > 12:
                 break
-            # if x == self.dozenCap - 2:
-                self.SaveMessageToList(f'''⏰ ATENTENÇAO⏰
-Sequencia de {x+1} numeros
-de 1 dezena
-Em
-{table}
-''')
+            if x == self.dozenCap - 2:
+                self.SendAttentionMessage(table, x, '1a dezena')
         else:
             self.SavaTableOnAlert(table, numList, colorList, '1dozen')
-            self.SaveMessageToList(f'''⚠️ ATENTENÇAO⚠️
-Apostar em numeros
-de 1a dezena
-em
-{table}''')
+            self.SendBetMessage(table, '1a dezena')
             return
 
         # Checks for second dozen
         for x in range(0, self.dozenCap):
             if numList[x] > 24:
                 break
-            # if x == self.dozenCap - 2:
-                self.SaveMessageToList(f'''⏰ ATENTENÇAO⏰
-Sequencia de {x+1} numeros
-de 2a dezena
-Em 
-{table}
-''')
+            if x == self.dozenCap - 2:
+                self.SendAttentionMessage(table, x, '2a dezena')
         else:
             self.SavaTableOnAlert(table, numList, colorList, '2dozen')
-            self.SaveMessageToList(f'''⚠️ ATENTENÇAO⚠️
-Apostar em numeros
-de 2a dezena
-em
-{table}''')
+            self.SendBetMessage(table, '2a dezena')
 
         # Checks fot third dozen
         for x in range(0, self.dozenCap):
             if numList[x] < 25:
                 break
-            # if x == self.dozenCap - 2:
-                self.SaveMessageToList(f'''⏰ ATENTENÇAO⏰
-Sequencia de {x+1}
-de 3a dezena
-Em 
-{table}''')
+            if x == self.dozenCap - 2:
+                self.SendAttentionMessage(table, x, '3a dezena')
         else:
             self.SavaTableOnAlert(table, numList, colorList, '3dozen')
-            self.SaveMessageToList(f'''⚠️ ATENTENÇAO⚠️
-Apostar em numeros
-de 3a dezena
-em
-{table}''')
+            self.SendBetMessage(table, '3a dezena')
 
     def CheckForRow(self, numList, colorList, table):
         # Checks for the first row
         for x in range(0, self.RowCap):
             if numList[x] not in firstRow:
                 break
-            # if x == self.RowCap - 2:
-                self.SaveMessageToList(f'''⏰ ATENTENÇAO⏰
-Sequencia de {x+1} numeros
-da 1a coluna
-Em 
-{table}''')
+            if x == self.RowCap - 2:
+                self.SendAttentionMessage(table, x, '1a coluna')
         else:
             self.SavaTableOnAlert(table, numList, colorList, '1row')
-            self.SaveMessageToList(f'''⚠️ ATENTENÇAO⚠️
-Apostar em numeros
-da 1a coluna
-em
-{table}''')
+            self.SendBetMessage(table, '1a coluna')
             return
 
         # Checks for the second Row
         for x in range(0, self.RowCap):
             if numList[x] not in secondRow:
                 break
-            # if x == self.RowCap - 2:
-                self.SaveMessageToList(f'''⏰ ATENTENÇAO⏰
-Sequencia de {x+1} numeros
-da 2a coluna
-Em 
-{table}''')
+            if x == self.RowCap - 2:
+                self.SendAttentionMessage(table, x, '2a coluna')
         else:
             self.SavaTableOnAlert(table, numList, colorList, '2row')
-            self.SaveMessageToList(f'''⚠️ ATENTENÇAO⚠️
-Apostar em numeros
-da 2a coluna
-em
-{table}''')
+            self.SendBetMessage(table, '2a coluna')
             return
 
         # Checks for the third row
         for x in range(0, self.RowCap):
             if numList[x] not in thirdRow:
                 break
-            # if x == self.RowCap - 2:
-                self.SaveMessageToList(f'''⏰ ATENTENÇAO⏰
-Sequencia de {x+1} numeros
-da 3a coluna
-Em 
-{table}''')
+            if x == self.RowCap - 2:
+                self.SendAttentionMessage(table, x, '3a coluna')
         else:
             self.SavaTableOnAlert(table, numList, colorList, '3row')
-            self.SaveMessageToList(f'''⚠️ ATENTENÇAO⚠️
-Apostar em numeros
-da 3a coluna
-em
-{table}''')
+            self.SendBetMessage(table, '3a coluna')
 
     def SavaTableOnAlert(self, table, numList, colorList, reason):
         tablesOnAlert[table] = [numList, colorList, reason]
-
-    def SendGreenMessage(self, table, numberList, reason):
-        print(f'deu green em {table}')
-        self.SendMessageTelegram(f'''✅GREEN✅
-{table}
-por [{reason}]
-{numberList[:len(numberList)- 8]}''')
 
     def CheckForResults(self, numberList, table, colorList, reason):
         # Checks for color
@@ -439,10 +364,37 @@ por [{reason}]
         elif numberList[0] in thirdRow and reason == '3row':
             self.SendGreenMessage(table, numberList, 'row3')
 
+    def SendRedMessage(self, table):
+        self.SendMessageTelegram(f'''❌Red❌
+por[{tablesOnAlert[table][2]}]
+{table}
+{tablesOnAlert[table][0][:len(tablesOnAlert[table][0])- 8]}''')
+
+    def SendAttentionMessage(self, table, x, reason):
+        self.SaveMessageToList(f'''⏰ ATENTENÇAO⏰
+Sequencia de {x+1} numeros
+{reason}
+Em 
+{table}''')
+
+    def SendBetMessage(self, table, reason):
+        self.SaveMessageToList(f'''⚠️ ATENTENÇAO⚠️
+Apostar em numeros
+{reason}
+em
+{table}''')
+
+    def SendGreenMessage(self, table, numberList, reason):
+        # print(f'deu green em {table}')
+        self.SendMessageTelegram(f'''✅GREEN✅
+{table}
+por [{reason}]
+{numberList[:len(numberList)- 8]}''')
+
 
 if __name__ == "__main__":
     bot = Bot()
     bot.BotStart()
     while True:
         bot.BotScrape()
-        sleep(2)
+

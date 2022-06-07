@@ -15,8 +15,10 @@ Yes the code is messy and there is much to do better, i just got back into pytho
 i just want to ship something that works OK.
 
 TODO
- Fix spamming bug
- Send a message alerting if the previous signal went well or not 
+Increase the maximum ammount of numbers that can be tracked
+Send signals on dedicated groups
+Add support to betano
+Fix a shit ton of bugs
  """
 
 # Driver Setup

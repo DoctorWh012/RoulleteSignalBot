@@ -48,6 +48,7 @@ class Bot:
     def __init__(self):
         # Notifier
         self.SendMessageTelegram("🚀𝐢𝐧𝐢𝐜𝐢𝐚𝐧𝐝𝐨 𝐛𝐨𝐭🚀")
+        
         # Input handler
         while True:
             try:
@@ -87,6 +88,7 @@ class Bot:
 
             except:
                 print("Erro ao Abrir o bot")
+                
             else:
                 break
 
@@ -117,17 +119,7 @@ class Bot:
     def CheckForSequence(self):
         # Clears the sequenceMessages list for new messages dont ask me how this works
         sequenceMessages.clear()
-
-        # Debug shit
-        os.system('cls')
-        print(f'{"-"*10} All tables {"-"*10}')
-        for table in allTables:
-            print(table)
         
-        print(f'{"-"*10} Tables on Alert {"-"*10}')
-        for table in tablesOnAlert:
-            print(table)
-
         # gets the results from a table and saves it on a list
         for table in allTables:
             numberList = []
@@ -154,11 +146,12 @@ class Bot:
 
                 try:
                     if len(tablesOnAlert[table][0]) >= 11:
-                        # print(
-                        #     f'{table} reached len {len(tablesOnAlert[table][0])}')
+                        print(
+                            f'{table} reached len {len(tablesOnAlert[table][0])}')
 
                         self.SendRedMessage(table)
                         tablesOnAlert.pop(table)
+                        
                 except:
                     pass
 
@@ -175,8 +168,9 @@ class Bot:
         try:
             teleBot.send_message(
                 chat_id=telegramGroup, text=message)
+        
         except:
-            sleep(30)
+            pass
 
     def SaveMessageToList(self, message):
         if message not in sequenceMessages:
@@ -371,21 +365,20 @@ por[{tablesOnAlert[table][2]}]
 {tablesOnAlert[table][0][:len(tablesOnAlert[table][0])- 8]}''')
 
     def SendAttentionMessage(self, table, x, reason):
-        self.SaveMessageToList(f'''⏰ ATENTENÇAO⏰
+        self.SaveMessageToList(f'''⏰ ATENÇAO⏰
 Sequencia de {x+1} numeros
 {reason}
 Em 
 {table}''')
 
     def SendBetMessage(self, table, reason):
-        self.SaveMessageToList(f'''⚠️ ATENTENÇAO⚠️
+        self.SaveMessageToList(f'''⚠️ ATENÇAO⚠️
 Apostar em numeros
 {reason}
 em
 {table}''')
 
     def SendGreenMessage(self, table, numberList, reason):
-        # print(f'deu green em {table}')
         self.SendMessageTelegram(f'''✅GREEN✅
 {table}
 por [{reason}]
@@ -397,4 +390,5 @@ if __name__ == "__main__":
     bot.BotStart()
     while True:
         bot.BotScrape()
+        sleep(1)
 

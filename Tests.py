@@ -1,2 +1,8 @@
-for x in range(0,3):
-    print('boiada')
+from collections import OrderedDict
+
+
+a = OrderedDict()
+a['french football roullete'] = ['aa', 'aa']
+b = 'football roullete'
+print(a['french'])
+

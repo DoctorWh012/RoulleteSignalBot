@@ -84,7 +84,7 @@ class Bot:
                 driver.find_element(
                     By.XPATH, '//*[@id="root"]/div/div[2]/div[2]/div/div/div/div[1]/div/nav/a[3]').click()
                 sleep(1)
-                self.ScrollGlitchSolver()
+                driver.execute_script("window.scrollTo(0, 500)")
 
             except:
                 print("Erro ao Abrir o bot")
@@ -93,8 +93,6 @@ class Bot:
                 break
 
     def BotScrape(self):
-        self.ScrollGlitchSolver()
-        
         # Web Scrapper V2
         soup = BeautifulSoup(driver.page_source, "html.parser")
 
@@ -170,8 +168,8 @@ class Bot:
             if x == self.colorCap - 2:
                 self.SendAttentionMessage(table, x, 'numeros black')
         else:
-            self.SendBetMessage(table, 'black')
             self.SavaTableOnAlert(table, numList, colorList, 'black')
+            self.SendBetMessage(table, 'black')
             return
 
         # Checks for a sequence of red
@@ -338,14 +336,7 @@ class Bot:
             self.SendGreenMessage(table, numberList, 'row2')
         elif numberList[0] in thirdRow and reason == '3row':
             self.SendGreenMessage(table, numberList, 'row3')
-            
-    def ScrollGlitchSolver(self):
-        driver.execute_script("window.scrollTo(0, 500)")
-        sleep(0.5)
-        driver.execute_script("window.scrollTo(0, 800)")
-        sleep(0.5)
 
-        
     def GreenRedChecker(self, table, numberList, colorList):
         # Green/Red verifier
         if table in tablesOnAlert:
@@ -354,27 +345,54 @@ class Bot:
                     f'\nadicionando numero {numberList[0]} em {table}\npq {numberList} != {tablesOnAlert[table][0][:8]} ')
 
                 # Possible fix for skipping numbers bug
-                # If if skipped nothing
+                # If it skipped nothing
                 if numberList[1:5] == tablesOnAlert[table][0][:4]:
                     tablesOnAlert[table][0].insert(0, numberList[0])
                     tablesOnAlert[table][1].insert(0, colorList[0])
-                
-                #if if skipped something
+
+                # If it skipped 1 number
                 elif numberList[2:5] == tablesOnAlert[table][0][:3]:
+                    print('Skipped 1 number')
                     tablesOnAlert[table][0].insert(0, numberList[1])
                     tablesOnAlert[table][1].insert(0, colorList[1])
                     self.CheckForResults(
                         tablesOnAlert[table][0], table, tablesOnAlert[table][1], tablesOnAlert[table][2])
-                    
+
+                    # Tries to add the new num if the last one wasn't a GREEN
                     try:
                         tablesOnAlert[table][1].insert(0, colorList[0])
                         tablesOnAlert[table][1].insert(0, colorList[0])
                     except:
                         pass
+
+                # If it skipped 2 numbers
+                elif numberList[3:6] == tablesOnAlert[table][0][:3]:
+                    print('Skipped 2 numbers')
+                    tablesOnAlert[table][0].insert(0, numberList[2])
+                    tablesOnAlert[table][1].insert(0, colorList[2])
+                    self.CheckForResults(
+                        tablesOnAlert[table][0], table, tablesOnAlert[table][1], tablesOnAlert[table][2])
+
+                    # Tries to add the new num if the last one wasn't a GREEN
+                    try:
+                        tablesOnAlert[table][0].insert(0, numberList[1])
+                        tablesOnAlert[table][1].insert(0, colorList[1])
+
+                        self.CheckForResults(
+                            tablesOnAlert[table][0], table, tablesOnAlert[table][1], tablesOnAlert[table][2])
+
+                        tablesOnAlert[table][1].insert(0, colorList[0])
+                        tablesOnAlert[table][1].insert(0, colorList[0])
+                    except:
+                        pass
+
+                # If something bad happened
                 else:
                     print(f'erro na mesa {table}')
                     self.SendMessageTelegram(f'Erro na mesa {table}')
-                    # tablesOnAlert.pop(table)
+                    tablesOnAlert.pop(table)
+
+                # Check For GREEN or RED after a new number was added
                 try:
                     print(f'Ficou {table} == {tablesOnAlert[table]}')
                     self.CheckForResults(
@@ -382,6 +400,7 @@ class Bot:
                 except:
                     pass
 
+            # Checks if the lenght of the numbersList of the tablesOnAlert exceded the quota
             try:
                 if len(tablesOnAlert[table][0]) >= 11:
                     print(

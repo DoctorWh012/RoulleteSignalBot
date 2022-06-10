@@ -7,11 +7,11 @@ from time import sleep
 from bs4 import BeautifulSoup
 from collections import OrderedDict
 
-""" 
+"""
 Disclaimer
 This code is made by D0c_ [https://github.com/DoctorWh012] all rights of it's use is reserved to him.
 
-Yes the code is messy and there is much to do better, i just got back into python after only doing C# for a long time, 
+Yes the code is messy and there is much to do better, i just got back into python after only doing C# for a long time,
 i just want to ship something that works OK.
 
 TODO
@@ -48,7 +48,7 @@ class Bot:
     def __init__(self):
         # Notifier
         self.SendMessageTelegram("🚀𝐢𝐧𝐢𝐜𝐢𝐚𝐧𝐝𝐨 𝐛𝐨𝐭🚀")
-        
+
         # Input handler
         while True:
             try:
@@ -84,20 +84,21 @@ class Bot:
                 driver.find_element(
                     By.XPATH, '//*[@id="root"]/div/div[2]/div[2]/div/div/div/div[1]/div/nav/a[3]').click()
                 sleep(1)
-                driver.execute_script("window.scrollTo(0, 700)")
+                self.ScrollGlitchSolver()
 
             except:
                 print("Erro ao Abrir o bot")
-                
+
             else:
                 break
 
     def BotScrape(self):
+        self.ScrollGlitchSolver()
+        
         # Web Scrapper V2
         soup = BeautifulSoup(driver.page_source, "html.parser")
 
         page = soup.find(id='root')
-
         # Gets all tables and sorts through them saving the name and game results
         for table in page.find_all(class_='tile default-layout'):
             results = []
@@ -119,7 +120,7 @@ class Bot:
     def CheckForSequence(self):
         # Clears the sequenceMessages list for new messages dont ask me how this works
         sequenceMessages.clear()
-        
+
         # gets the results from a table and saves it on a list
         for table in allTables:
             numberList = []
@@ -129,33 +130,8 @@ class Bot:
                 numberList.append(int(results[0]))
                 colorList.append(results[1])
 
-            # Green/Red verifier
-            if table in tablesOnAlert:
-                if numberList != tablesOnAlert[table][0][:8]:
-
-                    print(
-                        f'\nadicionando numero {numberList[0]} em {table}\npq {numberList} != {tablesOnAlert[table][0][:8]} ')
-
-                    tablesOnAlert[table][0].insert(0, numberList[0])
-                    tablesOnAlert[table][1].insert(0, colorList[0])
-
-                    print(f'Ficou {table} == {tablesOnAlert[table]}')
-
-                    self.CheckForResults(
-                        tablesOnAlert[table][0], table, tablesOnAlert[table][1], tablesOnAlert[table][2])
-
-                try:
-                    if len(tablesOnAlert[table][0]) >= 11:
-                        print(
-                            f'{table} reached len {len(tablesOnAlert[table][0])}')
-
-                        self.SendRedMessage(table)
-                        tablesOnAlert.pop(table)
-                        
-                except:
-                    pass
-
             # Conducts checks
+            self.GreenRedChecker(table, numberList, colorList)
             self.CheckForColorSequence(numberList, colorList, table)
             self.CheckForEvenOrOdd(numberList, colorList,  table)
             self.CheckForHiLo(numberList, colorList, table)
@@ -168,8 +144,9 @@ class Bot:
         try:
             teleBot.send_message(
                 chat_id=telegramGroup, text=message)
-        
+
         except:
+            print('Telebot was accused of Spamming')
             pass
 
     def SaveMessageToList(self, message):
@@ -320,13 +297,17 @@ class Bot:
             self.SendBetMessage(table, '3a coluna')
 
     def SavaTableOnAlert(self, table, numList, colorList, reason):
-        tablesOnAlert[table] = [numList, colorList, reason]
+        if table not in tablesOnAlert:
+            print(f'{"-" *30}')
+            print(
+                f'saved {table} with {numList} & {colorList} & {reason} on alert')
+
+            tablesOnAlert[table] = [numList, colorList, reason]
 
     def CheckForResults(self, numberList, table, colorList, reason):
         # Checks for color
         if reason == colorList[0]:
             self.SendGreenMessage(table, numberList, 'color')
-            tablesOnAlert.pop(table)
 
         # Checks for HiLo
         if numberList[0] <= 17 and reason == 'lo':
@@ -357,6 +338,60 @@ class Bot:
             self.SendGreenMessage(table, numberList, 'row2')
         elif numberList[0] in thirdRow and reason == '3row':
             self.SendGreenMessage(table, numberList, 'row3')
+            
+    def ScrollGlitchSolver(self):
+        driver.execute_script("window.scrollTo(0, 500)")
+        sleep(0.5)
+        driver.execute_script("window.scrollTo(0, 800)")
+        sleep(0.5)
+
+        
+    def GreenRedChecker(self, table, numberList, colorList):
+        # Green/Red verifier
+        if table in tablesOnAlert:
+            if numberList != tablesOnAlert[table][0][:8]:
+                print(
+                    f'\nadicionando numero {numberList[0]} em {table}\npq {numberList} != {tablesOnAlert[table][0][:8]} ')
+
+                # Possible fix for skipping numbers bug
+                # If if skipped nothing
+                if numberList[1:5] == tablesOnAlert[table][0][:4]:
+                    tablesOnAlert[table][0].insert(0, numberList[0])
+                    tablesOnAlert[table][1].insert(0, colorList[0])
+                
+                #if if skipped something
+                elif numberList[2:5] == tablesOnAlert[table][0][:3]:
+                    tablesOnAlert[table][0].insert(0, numberList[1])
+                    tablesOnAlert[table][1].insert(0, colorList[1])
+                    self.CheckForResults(
+                        tablesOnAlert[table][0], table, tablesOnAlert[table][1], tablesOnAlert[table][2])
+                    
+                    try:
+                        tablesOnAlert[table][1].insert(0, colorList[0])
+                        tablesOnAlert[table][1].insert(0, colorList[0])
+                    except:
+                        pass
+                else:
+                    print(f'erro na mesa {table}')
+                    self.SendMessageTelegram(f'Erro na mesa {table}')
+                    # tablesOnAlert.pop(table)
+                try:
+                    print(f'Ficou {table} == {tablesOnAlert[table]}')
+                    self.CheckForResults(
+                        tablesOnAlert[table][0], table, tablesOnAlert[table][1], tablesOnAlert[table][2])
+                except:
+                    pass
+
+            try:
+                if len(tablesOnAlert[table][0]) >= 11:
+                    print(
+                        f'{table} reached len {len(tablesOnAlert[table][0])}')
+
+                    self.SendRedMessage(table)
+                    tablesOnAlert.pop(table)
+
+            except:
+                pass
 
     def SendRedMessage(self, table):
         self.SendMessageTelegram(f'''❌Red❌
@@ -365,11 +400,12 @@ por[{tablesOnAlert[table][2]}]
 {tablesOnAlert[table][0][:len(tablesOnAlert[table][0])- 8]}''')
 
     def SendAttentionMessage(self, table, x, reason):
-        self.SaveMessageToList(f'''⏰ ATENÇAO⏰
-Sequencia de {x+1} numeros
-{reason}
-Em 
-{table}''')
+        pass
+# self.SaveMessageToList(f'''⏰ ATENÇAO⏰
+# Sequencia de {x+1} numeros
+# {reason}
+# Em
+# {table}''')
 
     def SendBetMessage(self, table, reason):
         self.SaveMessageToList(f'''⚠️ ATENÇAO⚠️
@@ -379,10 +415,12 @@ em
 {table}''')
 
     def SendGreenMessage(self, table, numberList, reason):
+        print(f'Deu GREEN em {table}')
         self.SendMessageTelegram(f'''✅GREEN✅
 {table}
 por [{reason}]
 {numberList[:len(numberList)- 8]}''')
+        tablesOnAlert.pop(table)
 
 
 if __name__ == "__main__":
@@ -390,5 +428,4 @@ if __name__ == "__main__":
     bot.BotStart()
     while True:
         bot.BotScrape()
-        sleep(1)
-
+        sleep(0.5)

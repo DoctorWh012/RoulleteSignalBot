@@ -388,7 +388,7 @@ class Bot:
 
                 # If something bad happened
                 else:
-                    print(f'erro na mesa {table}')
+                    print(f'\033[33merro na mesa {table}\033[m')
                     self.SendMessageTelegram(f'Erro na mesa {table}')
                     tablesOnAlert.pop(table)
 
@@ -413,6 +413,7 @@ class Bot:
                 pass
 
     def SendRedMessage(self, table):
+        print(f'Deu \033[31mRED\033[m em {table}')
         self.SendMessageTelegram(f'''❌Red❌
 por[{tablesOnAlert[table][2]}]
 {table}
@@ -434,7 +435,7 @@ em
 {table}''')
 
     def SendGreenMessage(self, table, numberList, reason):
-        print(f'Deu GREEN em {table}')
+        print(f'Deu \033[32mGREEN\033[m em {table}')
         self.SendMessageTelegram(f'''✅GREEN✅
 {table}
 por [{reason}]

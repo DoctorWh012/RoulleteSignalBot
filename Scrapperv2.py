@@ -1,4 +1,5 @@
 import os
+from turtle import colormode
 import telegram
 from selenium.webdriver.common.by import By
 from selenium import webdriver
@@ -15,8 +16,8 @@ Yes the code is messy and there is much to do better, i just got back into pytho
 i just want to ship something that works OK.
 
 TODO
-Optimizing
-Increase the maximum ammount of numbers that can be tracked
+Optimizing <- WIP
+Increase the maximum ammount of numbers that can be tracked <- Testing, seems good so far
 Send signals on dedicated groups
 Add support to betano
 Fix a shit ton of bugs
@@ -35,7 +36,9 @@ teleBot = telegram.Bot(telegramToken)
 
 # Useful Stuff
 allTables = OrderedDict()
+trackedTables = OrderedDict()
 tablesOnAlert = OrderedDict()
+
 firstRow = [3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 36]
 secondRow = [2, 5, 8, 11, 14, 17, 20, 23, 26, 29, 32, 35]
 thirdRow = [1, 4, 7, 10, 13, 16, 19, 22, 25, 28, 31, 34]
@@ -62,12 +65,19 @@ class Bot:
                 self.dozenCap = int(input('Sequencia de dezenas = '))
                 self.RowCap = int(input('Sequencia de colunas = '))
 
+                allCaps = [self.colorCap, self.hiLoCap,
+                           self.evenOrOddCap,  self.dozenCap, self.RowCap]
+                allCaps.sort()
+                self.trackCap = allCaps[-1]
+                print(f'Track {self.trackCap} numbers')
+
             except:
                 print('-'*60)
                 print("Input invalido Tente denovo")
 
             else:
-                os.system('cls')
+                # os.system('cls')
+                print('-'*60)
                 break
 
     def BotStart(self):
@@ -90,6 +100,7 @@ class Bot:
                 print("Erro ao Abrir o bot")
 
             else:
+                sleep(2)
                 break
 
     def BotScrape(self):
@@ -116,6 +127,7 @@ class Bot:
         self.CheckForSequence()
 
     def CheckForSequence(self):
+        print('\033[m', end='')
         # Clears the sequenceMessages list for new messages dont ask me how this works
         sequenceMessages.clear()
 
@@ -127,15 +139,66 @@ class Bot:
             for results in allTables[table]:
                 numberList.append(int(results[0]))
                 colorList.append(results[1])
+            # If table is not being tracked
+            if table not in trackedTables:
+                trackedTables[table] = [numberList, colorList]
+                print(
+                    f'Started to track {table} with {trackedTables[table][0]} & {trackedTables[table][1]}')
+
+            else:
+                # If there's a new number
+                if trackedTables[table][0][:8] != numberList:
+                    print(f'{"-" *30}')
+                    print(
+                        f'\nadicionando numero {numberList[0]} em {table}\npq {numberList} != {trackedTables[table][0][:8]} ')
+
+                    # If it skipped nothing
+                    if numberList[1:5] == trackedTables[table][0][:4]:
+                        trackedTables[table][0].insert(0, numberList[0])
+                        trackedTables[table][1].insert(0, colorList[0])
+
+                    # If it skipped 1 number
+                    elif numberList[2:5] == trackedTables[table][0][:3]:
+                        trackedTables[table][0].insert(0, numberList[1])
+                        trackedTables[table][1].insert(0, colorList[1])
+
+                        trackedTables[table][0].insert(0, numberList[0])
+                        trackedTables[table][1].insert(0, colorList[0])
+
+                    # If it skipped 2 numbers
+                    elif numberList[3:6] == trackedTables[table][0][:3]:
+                        trackedTables[table][0].insert(0, numberList[2])
+                        trackedTables[table][1].insert(0, colorList[2])
+
+                        trackedTables[table][0].insert(0, numberList[1])
+                        trackedTables[table][1].insert(0, colorList[1])
+
+                        trackedTables[table][1].insert(0, colorList[0])
+                        trackedTables[table][0].insert(0, numberList[0])
+
+                    print(f'Ficou {table} == {trackedTables[table]}')
+
+                if len(trackedTables[table][0]) > self.trackCap:
+                    while len(trackedTables[table][0]) != self.trackCap:
+                        print(
+                            f'{table} reached len({len(trackedTables[table][0])}) deleted num{trackedTables[table][0][-1]} & color{trackedTables[table][1][-1]}')
+                        del trackedTables[table][0][-1]
+                        del trackedTables[table][1][-1]
 
             # Conducts checks
-            self.GreenRedChecker(table, numberList, colorList)
-            self.CheckForColorSequence(numberList, colorList, table)
-            self.CheckForEvenOrOdd(numberList, colorList,  table)
-            self.CheckForHiLo(numberList, colorList, table)
-            self.CheckForDozen(numberList, colorList, table)
-            self.CheckForRow(numberList, colorList, table)
-
+            if len(trackedTables[table][0]) == self.trackCap:
+                self.GreenRedChecker(
+                    table, numberList, colorList)
+                self.CheckForColorSequence(
+                    trackedTables[table][0], trackedTables[table][1], table)
+                self.CheckForEvenOrOdd(
+                    trackedTables[table][0], trackedTables[table][1],  table)
+                self.CheckForHiLo(
+                    trackedTables[table][0], trackedTables[table][1], table)
+                self.CheckForDozen(
+                    trackedTables[table][0], trackedTables[table][1], table)
+                self.CheckForRow(trackedTables[table]
+                                 [0], trackedTables[table][1], table)
         self.RemoveMessageFromList()
 
     def SendMessageTelegram(self, message):
@@ -243,7 +306,7 @@ class Bot:
 
         # Checks for second dozen
         for x in range(0, self.dozenCap):
-            if numList[x] > 24:
+            if 13 < numList[x] > 24:
                 break
             if x == self.dozenCap - 2:
                 self.SendAttentionMessage(table, x, '2a dezena')
@@ -300,7 +363,7 @@ class Bot:
             print(
                 f'saved {table} with {numList} & {colorList} & {reason} on alert')
 
-            tablesOnAlert[table] = [numList, colorList, reason]
+            tablesOnAlert[table] = [numList[:8], colorList[:8], reason]
 
     def CheckForResults(self, numberList, table, colorList, reason):
         # Checks for color
@@ -341,8 +404,9 @@ class Bot:
         # Green/Red verifier
         if table in tablesOnAlert:
             if numberList != tablesOnAlert[table][0][:8]:
+                print('\033[36m', end='')
                 print(
-                    f'\nadicionando numero {numberList[0]} em {table}\npq {numberList} != {tablesOnAlert[table][0][:8]} ')
+                    f'\nadicionando numero {numberList[0]} em {table}On Alert\npq {numberList} != {tablesOnAlert[table][0][:8]} ')
 
                 # Possible fix for skipping numbers bug
                 # If it skipped nothing
@@ -360,7 +424,7 @@ class Bot:
 
                     # Tries to add the new num if the last one wasn't a GREEN
                     try:
-                        tablesOnAlert[table][1].insert(0, colorList[0])
+                        tablesOnAlert[table][0].insert(0, numberList[0])
                         tablesOnAlert[table][1].insert(0, colorList[0])
                     except:
                         pass
@@ -382,14 +446,14 @@ class Bot:
                             tablesOnAlert[table][0], table, tablesOnAlert[table][1], tablesOnAlert[table][2])
 
                         tablesOnAlert[table][1].insert(0, colorList[0])
-                        tablesOnAlert[table][1].insert(0, colorList[0])
+                        tablesOnAlert[table][0].insert(0, numberList[0])
                     except:
                         pass
 
                 # If something bad happened
                 else:
                     print(f'\033[33merro na mesa {table}\033[m')
-                    self.SendMessageTelegram(f'Erro na mesa {table}')
+                    # self.SendMessageTelegram(f'Erro na mesa {table}')
                     tablesOnAlert.pop(table)
 
                 # Check For GREEN or RED after a new number was added
@@ -420,12 +484,11 @@ por[{tablesOnAlert[table][2]}]
 {tablesOnAlert[table][0][:len(tablesOnAlert[table][0])- 8]}''')
 
     def SendAttentionMessage(self, table, x, reason):
-        pass
-# self.SaveMessageToList(f'''⏰ ATENÇAO⏰
-# Sequencia de {x+1} numeros
-# {reason}
-# Em
-# {table}''')
+        self.SaveMessageToList(f'''⏰ ATENÇAO⏰
+Sequencia de {x+1} numeros
+{reason}
+Em
+{table}''')
 
     def SendBetMessage(self, table, reason):
         self.SaveMessageToList(f'''⚠️ ATENÇAO⚠️
@@ -447,5 +510,5 @@ if __name__ == "__main__":
     bot = Bot()
     bot.BotStart()
     while True:
-        bot.BotScrape()
         sleep(0.5)
+        bot.BotScrape()

@@ -1,5 +1,3 @@
-import os
-from turtle import colormode
 import telegram
 from selenium.webdriver.common.by import By
 from selenium import webdriver
@@ -27,6 +25,7 @@ Fix a shit ton of bugs
 options = webdriver.ChromeOptions()
 s = Service("Dependencies\chromedriver.exe")
 options.add_experimental_option("excludeSwitches", ["enable-logging"])
+options.add_argument("window-size=2000,3500")
 driver = webdriver.Chrome(options=options, service=s)
 
 # Telegram setup
@@ -69,6 +68,8 @@ class Bot:
                            self.evenOrOddCap,  self.dozenCap, self.RowCap]
                 allCaps.sort()
                 self.trackCap = allCaps[-1]
+                if self.trackCap < 8:
+                    self.trackCap = 8
                 print(f'Track {self.trackCap} numbers')
 
             except:
@@ -94,13 +95,11 @@ class Bot:
                 driver.find_element(
                     By.XPATH, '//*[@id="root"]/div/div[2]/div[2]/div/div/div/div[1]/div/nav/a[3]').click()
                 sleep(1)
-                driver.execute_script("window.scrollTo(0, 500)")
 
             except:
                 print("Erro ao Abrir o bot")
 
             else:
-                sleep(2)
                 break
 
     def BotScrape(self):
@@ -139,6 +138,7 @@ class Bot:
             for results in allTables[table]:
                 numberList.append(int(results[0]))
                 colorList.append(results[1])
+
             # If table is not being tracked
             if table not in trackedTables:
                 trackedTables[table] = [numberList, colorList]
